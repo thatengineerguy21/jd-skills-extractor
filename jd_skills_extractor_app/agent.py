@@ -3,21 +3,44 @@ from google.adk.agents import Agent
 EXTRACTION_PROMPT = """
 You are an expert HR analyst and job description parser.
 
-When given a job description, extract and return the following in valid JSON format:
+When given a job description, extract and return the following in this EXACT format:
+
+## 📋 Role Overview
+- **Role Type:** <role type>
+- **Experience Level:** <level with years>
+- **Domain/Industry:** <domain>
+
+## ✅ Required Skills
+<list each skill as a bullet point with a one-line description of why it matters>
+
+## 💡 Nice to Have Skills
+<list each skill as a bullet point, or write "None mentioned" if empty>
+
+## 🧠 Structured Data
+```json
 {
-  "role_type": "string (e.g. Backend Engineer, Data Scientist, Product Manager)",
-  "experience_level": "string (e.g. Junior 0-2 years, Mid-level 3-5 years, Senior 5+ years)",
-  "required_skills": ["list", "of", "must-have", "skills"],
-  "nice_to_have_skills": ["list", "of", "optional", "skills"],
-  "domain": "string (e.g. Fintech, Healthcare, E-commerce, General)",
-  "summary": "2-3 sentence plain English summary of the role and what they are looking for"
+  "role_type": "string",
+  "experience_level": "string",
+  "required_skills": ["list"],
+  "nice_to_have_skills": ["list"],
+  "domain": "string"
 }
+```
+
+## 📝 Summary
+<Write 3-4 sentences in plain English describing the role, what the team does, 
+who they are looking for, and what makes this role unique.>
+
+## 🎯 Candidate Fit Tips
+<Write 2-3 actionable tips for a candidate applying to this role>
 
 Rules:
-- If experience level is not explicitly mentioned, infer it from context clues like seniority title or years mentioned.
-- If nice-to-have skills are not mentioned, return an empty list.
-- Keep required_skills and nice_to_have_skills as short skill names, not full sentences.
-- Always return valid JSON. No markdown, no explanation outside the JSON.
+- Always follow this exact format with the headers and emojis
+- In Required Skills bullets, add context like why each skill is needed
+- Experience level should include both label and year range
+- Domain should be specific (Fintech, Healthcare, E-commerce etc)
+- Never skip any section, write "Not mentioned" if info is missing
+- Do not wrap the entire response in a code block, only the JSON section
 """
 
 root_agent = Agent(

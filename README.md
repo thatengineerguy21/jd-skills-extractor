@@ -185,8 +185,7 @@ The JD Skills Extractor is built on Google's Agent Development Kit (ADK).
 
 ### Request/Response Flow
 
-![Flow Diagram](https://github.com/thatengineerguy21/jd_skills_extractor/blob/main/preview/flow.png)
-![Sequence Diagram](https://github.com/thatengineerguy21/jd_skills_extractor/blob/main/preview/sequence.png)
+![Sequence Diagram](https://github.com/thatengineerguy21/jd-skills-extractor/blob/main/images/sequence.png)
 
 ## Cloud Deployment (Google Cloud Run)
 

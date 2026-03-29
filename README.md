@@ -235,7 +235,9 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --role="roles/storage.admin"
 ```
 
-### Deploy to Cloud Run
+### Option 1: Deploy to Cloud Run as REST API
+
+Deploying the custom main.py application as a backend API:
 
 ```bash
 gcloud run deploy jd-skills-extractor \
@@ -247,7 +249,7 @@ gcloud run deploy jd-skills-extractor \
   --project your-project-id
 ```
 
-### Test the Cloud Run Endpoint
+#### Test the Cloud Run Endpoint
 
 Once deployed, Cloud Run provides a URL like:
 ```
@@ -275,6 +277,37 @@ curl -X POST https://your-cloud-run-url/run \
     }
   }"
 ```
+
+### Option 2: Deploy the ADK Chat UI (Automated Web Interface)
+
+Alternatively, if you want a ready-to-use, interactive web chat interface instead of a raw HTTP API, you can use the ADK's native deployment command. This wraps your agent in a UI automatically.
+
+**1. Ensure the ADK CLI is installed in your terminal:**
+
+If you receive an adk: command not found error in Cloud Shell, ensure your virtual environment is active and dependencies are installed so the CLI tool is available:
+
+  ```bash
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  ```
+
+**2. Run the ADK Deploy Command:**
+
+Note: We target the jd_skills_extractor_app folder specifically so the ADK can correctly locate the agent.py file, rather than targeting the root . directory.
+
+  ```bash
+  adk deploy cloud_run \
+  --project=$PROJECT_ID \
+  --region=us-central1 \
+  --service_name=jd-skills-extractor-chat-ui \
+  --with_ui \
+  jd_skills_extractor_app \
+  -- \
+  --service-account=$SERVICE_ACCOUNT
+  ```
+
+  Once the deployment finishes, Cloud Run will provide a new URL that opens directly to an interactive chat application where you can paste job descriptions and chat directly with the AI.
 
 ### View Logs
 
@@ -331,6 +364,10 @@ gcloud projects add-iam-policy-binding your-project-id \
   --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
   --role="roles/storage.admin"
 ```
+
+### ADK Deploy "ValueError: No root_agent found"
+
+If the ADK deploy command fails to find your agent, ensure you are pointing the command to the directory containing your agent.py file (e.g., jd_skills_extractor_app), rather than the root directory.
 
 ## Dependencies
 

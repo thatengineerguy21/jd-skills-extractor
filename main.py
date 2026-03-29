@@ -1,13 +1,26 @@
 import os
 import json
+import re
+import uuid
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware  # <-- FIXED: Added this import
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
+
 from jd_skills_extractor_app import agent
 
 app = FastAPI()
+
+# Add CORS middleware so your HTML UI can communicate with this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods (POST, GET, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 session_service = InMemorySessionService()
 runner = Runner(
@@ -26,19 +39,21 @@ async def extract_skills(request: Request):
             status_code=400,
             content={"error": "job_description field is required"}
         )
+    
+    unique_session_id = f"session_{uuid.uuid4().hex[:8]}"
 
     session = await session_service.create_session(
         app_name="jd_skills_extractor",
         user_id="user_1",
-        session_id="session_1"
+        session_id=unique_session_id
     )
 
     message = Content(parts=[Part(text=job_description)])
-
     response_text = ""
+
     async for event in runner.run_async(
         user_id="user_1",
-        session_id="session_1",
+        session_id=unique_session_id,
         new_message=message
     ):
         if event.is_final_response() and event.content:
@@ -46,25 +61,30 @@ async def extract_skills(request: Request):
                 if part.text:
                     response_text += part.text
 
+    # Default Fallback
+    structured = {"raw_response": response_text}
+
     try:
-        # Look for the content specifically between ```json and ```
-        json_match = re.search(r'```json\n(.*?)\n```', response_text, re.DOTALL)
+        # Workaround: Use a variable for backticks so it doesn't break Markdown UI parsers
+        bt = "```"
+        pattern = rf'{bt}(?i:json)?\n(.*?)\n{bt}'
+        json_match = re.search(pattern, response_text, re.DOTALL)
         
         if json_match:
-            # If found, parse just that extracted JSON string
-            extracted_json_string = json_match.group(1)
+            extracted_json_string = json_match.group(1).strip()
             structured_data = json.loads(extracted_json_string)
-            
-            # You can return both the parsed data AND the full markdown 
             structured = {
                 "parsed_data": structured_data,
                 "full_markdown": response_text 
             }
         else:
-            # Fallback if the agent didn't format it right
-            structured = {"raw_response": response_text}
-            
-    except json.JSONDecodeError:
+            # Fallback if no markdown block
+            structured = {
+                "parsed_data": json.loads(response_text),
+                "full_markdown": response_text
+            }
+    except Exception as e:
+        print(f"Parsing error: {e}")
         structured = {"raw_response": response_text}
 
     return JSONResponse(content=structured)

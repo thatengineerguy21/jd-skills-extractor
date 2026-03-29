@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8080
-
-CMD ["adk", "api_server", "--port", "8080", "job_skills_extractor"]
+# Cloud Run injects the PORT environment variable. 
+# This command runs your main.py FastAPI app and binds it properly.
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]

@@ -47,7 +47,23 @@ async def extract_skills(request: Request):
                     response_text += part.text
 
     try:
-        structured = json.loads(response_text)
+        # Look for the content specifically between ```json and ```
+        json_match = re.search(r'```json\n(.*?)\n```', response_text, re.DOTALL)
+        
+        if json_match:
+            # If found, parse just that extracted JSON string
+            extracted_json_string = json_match.group(1)
+            structured_data = json.loads(extracted_json_string)
+            
+            # You can return both the parsed data AND the full markdown 
+            structured = {
+                "parsed_data": structured_data,
+                "full_markdown": response_text 
+            }
+        else:
+            # Fallback if the agent didn't format it right
+            structured = {"raw_response": response_text}
+            
     except json.JSONDecodeError:
         structured = {"raw_response": response_text}
 
